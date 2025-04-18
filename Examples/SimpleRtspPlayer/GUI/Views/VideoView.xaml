@@ -5,5 +5,30 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              mc:Ignorable="d"
              d:DesignHeight="450" d:DesignWidth="800">
-    <Image x:Name="VideoImage" x:FieldModifier="private" SnapsToDevicePixels="True" UseLayoutRounding="True" />
+    <Grid>
+        <Image x:Name="VideoImage" Stretch="Fill" />
+        <TextBlock x:Name="LoadingInfo" 
+                   HorizontalAlignment="Center" 
+                   VerticalAlignment="Center" 
+                   FontSize="16" 
+                   FontWeight="Bold" 
+                   Foreground="White">
+            <TextBlock.Background>
+                <SolidColorBrush Color="Black" Opacity="0.5"/>
+            </TextBlock.Background>
+            <TextBlock.Effect>
+                <DropShadowEffect ShadowDepth="1" Color="Black" Opacity="0.8" BlurRadius="2"/>
+            </TextBlock.Effect>
+        </TextBlock>
+        <TextBlock x:Name="ConnectionInfo" 
+                   HorizontalAlignment="Left" 
+                   VerticalAlignment="Top" 
+                   FontSize="12" 
+                   Margin="10,10,0,0" 
+                   Foreground="Aqua">
+            <TextBlock.Effect>
+                <DropShadowEffect ShadowDepth="1" Color="Black" Opacity="0.8" BlurRadius="2"/>
+            </TextBlock.Effect>
+        </TextBlock>
+    </Grid>
 </UserControl>

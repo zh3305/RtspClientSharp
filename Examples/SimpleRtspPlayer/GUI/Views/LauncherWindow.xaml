@@ -1,0 +1,20 @@
+<Window x:Class="SimpleRtspPlayer.GUI.Views.LauncherWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:SimpleRtspPlayer.GUI.Views"
+        mc:Ignorable="d"
+        Title="RTSP视频播放器启动器" Height="250" Width="400" WindowStartupLocation="CenterScreen">
+    <Grid>
+        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+            <TextBlock Text="RTSP多视频播放器" FontSize="24" FontWeight="Bold" Margin="0,0,0,20" 
+                       HorizontalAlignment="Center"/>
+            <Button x:Name="LaunchButton" Content="启动新播放器窗口" Width="200" Height="40" 
+                    Background="#3399FF" Foreground="White" FontSize="16" FontWeight="Bold"
+                    Click="LaunchButton_Click" Margin="0,10"/>
+            <TextBlock Text="点击按钮可以打开多个播放器窗口" HorizontalAlignment="Center" 
+                       FontStyle="Italic" Margin="0,10"/>
+        </StackPanel>
+    </Grid>
+</Window> 

@@ -5,12 +5,10 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:gui="clr-namespace:SimpleRtspPlayer.GUI"
         xmlns:views="clr-namespace:SimpleRtspPlayer.GUI.Views"
-        xmlns:i="http://schemas.microsoft.com/expression/2010/interactivity"
-        xmlns:command="http://www.galasoft.ch/mvvmlight"
+        xmlns:b="http://schemas.microsoft.com/xaml/behaviors"
         mc:Ignorable="d"
-        Title="SimpleRtspPlayer" Width="1200" Height="675" MinWidth="16" MinHeight="16"
-        WindowStartupLocation="CenterScreen"
-        DataContext="{Binding MainWindowViewModel, Source={StaticResource ViewModelLocator}}">
+        Title="RTSP多视频播放器" Width="1200" Height="675" MinWidth="800" MinHeight="600"
+        WindowStartupLocation="CenterScreen" WindowState="Maximized">
     <Window.Resources>
         <ControlTemplate x:Key="ValidationTemplate">
             <DockPanel>
@@ -28,53 +26,111 @@
             </Style.Triggers>
         </Style>
     </Window.Resources>
-    <i:Interaction.Triggers>
-        <i:EventTrigger EventName="Closing">
-            <command:EventToCommand Command="{Binding ClosingCommand}" PassEventArgsToCommand="True" />
-        </i:EventTrigger>
-    </i:Interaction.Triggers>
+    <b:Interaction.Triggers>
+        <b:EventTrigger EventName="Closing">
+            <b:InvokeCommandAction Command="{Binding ClosingCommand}" PassEventArgsToCommand="True" />
+        </b:EventTrigger>
+    </b:Interaction.Triggers>
+    
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="*" />
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
-        <views:VideoView Grid.Row="0" VideoSource="{Binding VideoSource}" />
-        <Grid Grid.Row="1" Margin="2">
+        
+        <!-- 顶部标题和分页控制 -->
+        <Border Grid.Row="0" Background="#F5F5F5" BorderBrush="#CCCCCC" BorderThickness="0,0,0,1">
+            <DockPanel>
+                <TextBlock Text="RTSP视频监控" FontSize="16" FontWeight="Bold" Margin="15,10" DockPanel.Dock="Left"/>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,15,0">
+                    <Button x:Name="PrevButton" Content="上一页" Width="80" Height="30" Margin="5" Command="{Binding PrevPageCommand}"
+                            Background="#3399FF" Foreground="White" FontWeight="Bold"/>
+                    <Border Background="#F0F0F0" CornerRadius="4" Padding="10,5">
+                        <TextBlock x:Name="PageInfo" Text="{Binding PageInfoText}" VerticalAlignment="Center" FontSize="14" FontWeight="Bold"/>
+                    </Border>
+                    <Button x:Name="NextButton" Content="下一页" Width="80" Height="30" Margin="5" Command="{Binding NextPageCommand}"
+                            Background="#3399FF" Foreground="White" FontWeight="Bold"/>
+                </StackPanel>
+            </DockPanel>
+        </Border>
+        
+        <!-- 视频显示区域 -->
+        <Grid Grid.Row="1" x:Name="VideoContainer">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="2*" />
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
-            <DockPanel Grid.Column="0">
-                <Label Content="Device address:" />
-                <TextBox
-                    Validation.ErrorTemplate="{StaticResource ValidationTemplate}"
-                    Style="{StaticResource TextBoxInError}"
-                    VerticalContentAlignment="Center">
-                    <Binding Path="DeviceAddress" UpdateSourceTrigger="PropertyChanged">
-                        <Binding.ValidationRules>
-                            <gui:AddressValidationRule />
-                        </Binding.ValidationRules>
-                    </Binding>
-                </TextBox>
-            </DockPanel>
-            <DockPanel Grid.Column="1">
-                <Label Content="Login:" />
-                <TextBox Text="{Binding Login}" VerticalContentAlignment="Center" />
-            </DockPanel>
-            <DockPanel Grid.Column="2">
-                <Label Content="Password:" />
-                <TextBox Text="{Binding Password}" VerticalContentAlignment="Center" />
-            </DockPanel>
+            
+            <!-- 四个视频面板 -->
+            <Border Grid.Row="0" Grid.Column="0" BorderBrush="#CCCCCC" BorderThickness="1" Margin="5">
+                <views:VideoView x:Name="VideoView1" VideoSource="{Binding VideoSource1}"/>
+            </Border>
+            <Border Grid.Row="0" Grid.Column="1" BorderBrush="#CCCCCC" BorderThickness="1" Margin="5">
+                <views:VideoView x:Name="VideoView2" VideoSource="{Binding VideoSource2}"/>
+            </Border>
+            <Border Grid.Row="1" Grid.Column="0" BorderBrush="#CCCCCC" BorderThickness="1" Margin="5">
+                <views:VideoView x:Name="VideoView3" VideoSource="{Binding VideoSource3}"/>
+            </Border>
+            <Border Grid.Row="1" Grid.Column="1" BorderBrush="#CCCCCC" BorderThickness="1" Margin="5">
+                <views:VideoView x:Name="VideoView4" VideoSource="{Binding VideoSource4}"/>
+            </Border>
         </Grid>
-        <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="2">
-            <Button Content="Start" Width="200" Margin="4" Command="{Binding StartClickCommand}" />
-            <Button Content="Stop" Width="200" Margin="4" Command="{Binding StopClickCommand}" />
-        </StackPanel>
-        <TextBlock Margin="2" Grid.Row="3" Text="Supported codecs: H264/MJPEG; Use &quot;http:&#47;&#47;&quot; prefix in address to connect through HTTP tunnel" />
-        <TextBlock Margin="2" Grid.Row="4" Height="20" Background="LightGray" Text="{Binding Status}" />
+        
+        <!-- 底部控制区域 -->
+        <Grid Grid.Row="2">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+            
+            <!-- 设备地址、登录和密码 -->
+            <Grid Grid.Row="0" Margin="2">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="2*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <DockPanel Grid.Column="0">
+                    <Label Content="RTSP地址:"/>
+                    <TextBox 
+                        Validation.ErrorTemplate="{StaticResource ValidationTemplate}"
+                        Style="{StaticResource TextBoxInError}"
+                        VerticalContentAlignment="Center"
+                        Text="{Binding DeviceAddress, Mode=OneWay}"
+                        IsReadOnly="True"
+                        Background="#F0F0F0"/>
+                </DockPanel>
+                <DockPanel Grid.Column="1">
+                    <Label Content="登录:"/>
+                    <TextBox Text="{Binding Login}" VerticalContentAlignment="Center"/>
+                </DockPanel>
+                <DockPanel Grid.Column="2">
+                    <Label Content="密码:"/>
+                    <TextBox Text="{Binding Password}" VerticalContentAlignment="Center"/>
+                </DockPanel>
+            </Grid>
+            
+            <!-- 操作按钮 -->
+            <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="2">
+                <Button Content="开始播放" Width="200" Margin="4" Command="{Binding StartClickCommand}"/>
+                <Button Content="停止播放" Width="200" Margin="4" Command="{Binding StopClickCommand}"/>
+            </StackPanel>
+            
+            <!-- 状态信息 -->
+            <Grid Grid.Row="2">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0" Margin="2" Text="支持编码: H264/MJPEG; 使用 &quot;http:&#47;&#47;&quot; 前缀可通过HTTP隧道连接"/>
+                <TextBlock Grid.Column="1" Margin="2" Background="LightGray" Text="{Binding Status}"/>
+            </Grid>
+        </Grid>
     </Grid>
 </Window>

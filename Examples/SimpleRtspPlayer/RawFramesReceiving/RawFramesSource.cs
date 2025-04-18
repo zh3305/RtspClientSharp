@@ -14,6 +14,7 @@ namespace SimpleRtspPlayer.RawFramesReceiving
         private readonly ConnectionParameters _connectionParameters;
         private Task _workTask = Task.CompletedTask;
         private CancellationTokenSource _cancellationTokenSource;
+        private volatile bool _isStopped;
 
         public EventHandler<RawFrame> FrameReceived { get; set; }
         public EventHandler<string> ConnectionStatusChanged { get; set; }
@@ -26,6 +27,8 @@ namespace SimpleRtspPlayer.RawFramesReceiving
 
         public void Start()
         {
+            _isStopped = false;
+            
             _cancellationTokenSource = new CancellationTokenSource();
 
             CancellationToken token = _cancellationTokenSource.Token;
@@ -38,7 +41,24 @@ namespace SimpleRtspPlayer.RawFramesReceiving
 
         public void Stop()
         {
-            _cancellationTokenSource.Cancel();
+            _isStopped = true;
+            
+            try 
+            {
+                _cancellationTokenSource?.Cancel();
+            }
+            catch (Exception ex) 
+            {
+                Console.WriteLine($"Exception during cancellation: {ex.Message}");
+            }
+            
+            try
+            {
+                Task.Delay(100).Wait();
+            }
+            catch (Exception)
+            {
+            }
         }
 
         private async Task ReceiveAsync(CancellationToken token)
@@ -49,7 +69,7 @@ namespace SimpleRtspPlayer.RawFramesReceiving
                 {
                     rtspClient.FrameReceived += RtspClientOnFrameReceived;
 
-                    while (true)
+                    while (!_isStopped && !token.IsCancellationRequested)
                     {
                         OnStatusChanged("Connecting...");
 
@@ -82,21 +102,43 @@ namespace SimpleRtspPlayer.RawFramesReceiving
                             await Task.Delay(RetryDelay, token);
                         }
                     }
+                    
+                    rtspClient.FrameReceived -= RtspClientOnFrameReceived;
                 }
             }
             catch (OperationCanceledException)
             {
             }
+            catch (Exception ex)
+            {
+                OnStatusChanged($"Error in ReceiveAsync: {ex.Message}");
+            }
         }
 
         private void RtspClientOnFrameReceived(object sender, RawFrame rawFrame)
         {
-            FrameReceived?.Invoke(this, rawFrame);
+            if (_isStopped)
+                return;
+                
+            try
+            {
+                FrameReceived?.Invoke(this, rawFrame);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in frame processing: {ex.Message}");
+            }
         }
 
         private void OnStatusChanged(string status)
         {
-            ConnectionStatusChanged?.Invoke(this, status);
+            try
+            {
+                ConnectionStatusChanged?.Invoke(this, status);
+            }
+            catch (Exception)
+            {
+            }
         }
     }
 }

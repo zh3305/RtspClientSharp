@@ -36,6 +36,7 @@ namespace SimpleRtspPlayer.GUI.Models
 
             _rawFramesSource.Stop();
             _realtimeVideoSource.SetRawFramesSource(null);
+            _realtimeAudioSource.SetRawFramesSource(null);
             _rawFramesSource = null;
         }
 

@@ -4,6 +4,7 @@ using System.Drawing;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
@@ -16,7 +17,7 @@ namespace SimpleRtspPlayer.GUI.Views
     /// <summary>
     /// Interaction logic for VideoView.xaml
     /// </summary>
-    public partial class VideoView
+    public partial class VideoView : UserControl
     {
         private static readonly System.Windows.Media.Color DefaultFillColor = Colors.Black;
         private static readonly TimeSpan ResizeHandleTimeout = TimeSpan.FromMilliseconds(500);
@@ -59,6 +60,48 @@ namespace SimpleRtspPlayer.GUI.Views
         {
             InitializeComponent();
             _invalidateAction = Invalidate;
+        }
+
+        /// <summary>
+        /// 设置加载信息显示
+        /// </summary>
+        /// <param name="connectionAddress">连接地址</param>
+        public void SetLoadingInfo(string connectionAddress)
+        {
+            Dispatcher.Invoke(() =>
+            {
+                // 显示连接信息
+                ConnectionInfo.Text = connectionAddress;
+                LoadingInfo.Text = "加载中...";
+                LoadingInfo.Visibility = Visibility.Visible;
+                
+                // 确保背景为黑色
+                UpdateBackground();
+            });
+        }
+
+        /// <summary>
+        /// 隐藏加载信息
+        /// </summary>
+        public void HideLoadingInfo()
+        {
+            Dispatcher.Invoke(() =>
+            {
+                LoadingInfo.Visibility = Visibility.Collapsed;
+            });
+        }
+        
+        /// <summary>
+        /// 更新背景为黑色
+        /// </summary>
+        private void UpdateBackground()
+        {
+            // 确保有效尺寸
+            if (_width > 0 && _height > 0)
+            {
+                // 重新初始化位图
+                ReinitializeBitmap(_width, _height);
+            }
         }
 
         protected override System.Windows.Size MeasureOverride(System.Windows.Size constraint)
@@ -136,13 +179,45 @@ namespace SimpleRtspPlayer.GUI.Views
             if (e.OldValue is IVideoSource oldVideoSource)
                 oldVideoSource.FrameReceived -= view.OnFrameReceived;
 
+            // 立即更新背景为黑色
+            view.UpdateBackground();
+
             if (e.NewValue is IVideoSource newVideoSource)
+            {
+                // 显示"连接中..."信息
+                if (newVideoSource != null)
+                {
+                    view.LoadingInfo.Text = "连接中...";
+                    view.LoadingInfo.Visibility = Visibility.Visible;
+                }
+                else
+                {
+                    view.LoadingInfo.Visibility = Visibility.Collapsed;
+                }
+
                 newVideoSource.FrameReceived += view.OnFrameReceived;
+            }
+            else
+            {
+                // 如果没有视频源，则显示"暂无视频"
+                view.LoadingInfo.Text = "暂无视频";
+                view.LoadingInfo.Visibility = Visibility.Visible;
+                view.ConnectionInfo.Text = string.Empty;
+            }
         }
 
         private void OnFrameReceived(object sender, IDecodedVideoFrame decodedFrame)
         {
-            Application.Current.Dispatcher.Invoke(_invalidateAction, DispatcherPriority.Send, decodedFrame);
+            Application.Current.Dispatcher.Invoke(() => 
+            {
+                // 收到第一帧时隐藏加载信息
+                if (LoadingInfo.Visibility == Visibility.Visible)
+                {
+                    LoadingInfo.Visibility = Visibility.Collapsed;
+                }
+                
+                _invalidateAction(decodedFrame);
+            }, DispatcherPriority.Send);
         }
 
         private void Invalidate(IDecodedVideoFrame decodedVideoFrame)
@@ -168,6 +243,9 @@ namespace SimpleRtspPlayer.GUI.Views
         {
             var view = (VideoView)d;
             view._fillColor = (System.Windows.Media.Color)e.NewValue;
+            
+            // 更新背景颜色
+            view.UpdateBackground();
         }
 
         private unsafe void UpdateBackgroundColor(IntPtr backBufferPtr, int backBufferStride)
